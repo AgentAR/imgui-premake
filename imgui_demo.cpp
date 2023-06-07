@@ -2624,6 +2624,7 @@ struct ExampleSelection
     // Data
     ImGuiStorage                        Storage;        // Selection set
     int                                 SelectionSize;  // Number of selected items (== number of 1 in the Storage, maintained by this class). // FIXME-MULTISELECT: Imply more difficult to track with intrusive selection schemes?
+    bool                                QueueDeletion;  // Request deleting selected items
 
     // Functions
     ExampleSelection()                  { Clear(); }
@@ -2668,6 +2669,8 @@ struct ExampleSelection
     template<typename ITEM_TYPE>
     int ApplyDeletionPreLoop(ImGuiMultiSelectIO* ms_io, ImVector<ITEM_TYPE>& items)
     {
+        QueueDeletion = false;
+
         // If current item is not selected.
         if (ms_io->NavIdSelected == false)          // Here 'NavIdSelected' should be == to 'GetSelected(ms_io->NavIdData)'
         {
@@ -2959,6 +2962,7 @@ static void ShowDemoWindowMultiSelect()
             static int items_next_id = 0;
             if (items_next_id == 0) { for (int n = 0; n < 1000; n++) { items.push_back(items_next_id++); } }
             static ExampleSelection selection;
+            static bool queue_deletion = false;
 
             ImGui::Text("Selection size: %d/%d", selection.GetSize(), items.Size);
 
@@ -2976,7 +2980,7 @@ static void ShowDemoWindowMultiSelect()
                 // FIXME-MULTISELECT: Shortcut(). Hard to demo this? May be helpful to send a helper/optional "delete" signal.
                 // FIXME-MULTISELECT: may turn into 'ms_io->RequestDelete' -> need HasSelection passed.
                 // FIXME-MULTISELECT: Test with intermediary modal dialog.
-                const bool want_delete = (selection.GetSize() > 0) && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete);
+                const bool want_delete = selection.QueueDeletion || ((selection.GetSize() > 0) && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
                 if (want_delete)
                     selection.ApplyDeletionPreLoop(ms_io, items);
                 const int next_focus_item_idx = (int)(intptr_t)ms_io->RequestFocusItem;
@@ -3068,7 +3072,10 @@ static void ShowDemoWindowMultiSelect()
                         // Right-click: context menu
                         if (ImGui::BeginPopupContextItem())
                         {
-                            ImGui::Text("(Testing Selectable inside an embedded popup)");
+                            ImGui::BeginDisabled(!use_deletion || selection.GetSize() == 0);
+                            sprintf(label, "Delete %d item(s)###DeleteSelected", selection.GetSize());
+                            selection.QueueDeletion |= ImGui::Selectable(label);
+                            ImGui::EndDisabled();
                             ImGui::Selectable("Close");
                             ImGui::EndPopup();
                         }

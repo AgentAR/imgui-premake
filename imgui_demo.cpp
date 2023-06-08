@@ -2979,7 +2979,6 @@ static void ShowDemoWindowMultiSelect()
 
                 // FIXME-MULTISELECT: Shortcut(). Hard to demo this? May be helpful to send a helper/optional "delete" signal.
                 // FIXME-MULTISELECT: may turn into 'ms_io->RequestDelete' -> need HasSelection passed.
-                // FIXME-MULTISELECT: Test with intermediary modal dialog.
                 const bool want_delete = selection.QueueDeletion || ((selection.GetSize() > 0) && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
                 if (want_delete)
                     selection.ApplyDeletionPreLoop(ms_io, items);
